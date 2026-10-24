@@ -16,7 +16,7 @@ Spielen: https://gr3hab.github.io/numfact/ · English: https://gr3hab.github.io/
 | `en/index.html` | Englischer Einstieg für geteilte Links (englische Vorschau in WhatsApp & Co.) | ja |
 | `sw.js` | Offline-Hilfe: zuletzt geladene Fassung, wenn keine Verbindung da ist | ja |
 | `fonts/` | Schriften (lokal, keine Anfragen an fremde Server) | ja |
-| `og.png`, `icon*.png`, `manifest.webmanifest` | Vorschaubild, App-Icons, Home-Bildschirm-App | ja |
+| `og-de.png`, `og-en.png`, `icon*.png`, `manifest.webmanifest` | Vorschaubilder für geteilte Links (Deutsch und Englisch, gleiches Design, erzeugt mit `_dev/grafik/render.js`), App-Icons, Home-Bildschirm-App. `og.png` (englisch) bleibt für früher geteilte Links liegen | ja |
 | `_dev/` | Prüfseite, Tests, Redaktionsunterlagen, Nachweise | **nein** |
 
 GitHub Pages veröffentlicht Ordner, die mit `_` beginnen, nicht. Die Prüfseite mit allen Lösungen und alles für die Redaktion liegt deshalb in `_dev/`.
@@ -29,7 +29,7 @@ GitHub Pages veröffentlicht Ordner, die mit `_` beginnen, nicht. Die Prüfseite
 - `…/numfact/?n=4&m=easy` öffnet #4, Stufe Easy. `m` ist `easy`, `hard`, `mirror` oder `impossible`.
 - `…/numfact/en/?n=4&m=easy` dasselbe auf Englisch. `?lang=en` funktioniert weiterhin.
 - Ein Link auf ein Rätsel, das in der eigenen Zeitzone noch nicht erschienen ist, öffnet das heutige Rätsel mit einem Hinweis, wann es erscheint.
-- Die Linkvorschau (WhatsApp & Co.) sagt auf Deutsch, was NUMIGMA ist und dass es kostenlos ist, ohne Anmeldung und ohne Werbung. `en/` hat eine eigene englische Vorschau.
+- Die Linkvorschau (WhatsApp & Co.) sagt auf Deutsch, was NUMIGMA ist und dass es kostenlos ist, ohne Anmeldung und ohne Werbung. Das Bild `og-de.png` hat den deutschen Slogan „Knack den Code. Entdeck den Fakt.“ `en/` hat eine eigene englische Vorschau mit `og-en.png`.
 
 ## Regeln für die Uhr
 

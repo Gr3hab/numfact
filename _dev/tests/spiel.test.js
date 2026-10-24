@@ -96,7 +96,7 @@ test('Erster Besuch mit Link auf ein älteres Rätsel: der Knopf nennt genau die
   await page.context().close();
 });
 
-test('Linkvorschau: Deutsch sagt klar, was das ist und dass es kostenlos ist; Englisch hat eine eigene', () => {
+test('Linkvorschau: Deutsch sagt klar, was das ist und dass es kostenlos ist; jede Sprache mit eigenem Text und Bild', () => {
   const root = path.join(__dirname, '..', '..');
   const meta = (f, prop) => {
     const m = fs.readFileSync(path.join(root, f), 'utf8').match(new RegExp(`<meta (?:property|name)="${prop}" content="([^"]*)"`));
@@ -108,6 +108,21 @@ test('Linkvorschau: Deutsch sagt klar, was das ist und dass es kostenlos ist; En
   assert.equal(meta('index.html', 'og:locale'), 'de_AT');
   assert.match(meta('en/index.html', 'og:description'), /each number is a letter.*Free, no sign-up, no ads\.$/);
   assert.equal(meta('en/index.html', 'og:locale'), 'en_GB');
+  // Jede Sprache hat ihr eigenes Bild (deutscher bzw. englischer Slogan), beide 1200×630 und tatsächlich vorhanden
+  const base = 'https://gr3hab.github.io/numfact/';
+  assert.equal(meta('index.html', 'og:image'), base + 'og-de.png');
+  assert.equal(meta('en/index.html', 'og:image'), base + 'og-en.png');
+  assert.equal(meta('index.html', 'og:image:alt'), 'NUMIGMA: Knack den Code. Entdeck den Fakt.');
+  assert.equal(meta('en/index.html', 'og:image:alt'), 'NUMIGMA: Crack the code. Reveal the fact.');
+  for (const f of ['og-de.png', 'og-en.png']) {
+    const png = fs.readFileSync(path.join(root, f));
+    assert.equal(png.toString('latin1', 1, 4), 'PNG', f);
+    assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [1200, 630], f);
+    for (const file of ['index.html', 'en/index.html']) {
+      assert.equal(meta(file, 'og:image:width'), '1200'); assert.equal(meta(file, 'og:image:height'), '630');
+    }
+  }
+  assert.notDeepEqual(fs.readFileSync(path.join(root, 'og-de.png')), fs.readFileSync(path.join(root, 'og-en.png')));
 });
 
 test('Regelzeile: zwei kurze Zeilen statt abgeschnittenem Text, der Screenreader hört die ganze Regel', async () => {

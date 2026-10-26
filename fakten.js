@@ -285,7 +285,7 @@ window.NUMIGMA_FACTS = [
     de: ['Zebras haben eine dunkle Haut.', 'Unter dem gestreiften Fell ist die Haut fast schwarz. Die weißen Streifen sind Stellen, an denen das Fell keinen Farbstoff bildet.'],
     en: ['Zebras have dark skin.', 'Under the striped coat the skin is almost black. The white stripes are places where the hair produces no pigment.'],
     quellen: [{ name: 'Wikipedia (en): Zebra', url: 'https://en.wikipedia.org/wiki/Zebra' }, { name: 'Wikipedia (de): Zebras', url: 'https://de.wikipedia.org/wiki/Zebras' }] },
-  // ab #17: am 25.10.2026 neu geordnet: vier verschiedene Themen pro Tag, Easy in beiden Sprachen 5 bis 7 Wörter (höchstens 8), siehe _dev/redaktion/ANLEITUNG.md
+  // ab #17: am 25.10.2026 neu geordnet: vier verschiedene Themen pro Tag, Easy höchstens 7 Wörter (Ziel 5 bis 7, Grenze 8; einzelne sehr gute Sätze mit 4 Wörtern bleiben), siehe _dev/redaktion/ANLEITUNG.md
   // #17
   { id: 'n165', thema: 'tiere',
     de: ['Hunde schwitzen über ihre Pfoten.', 'Sonst haben sie in der Haut nur wenige Schweißdrüsen. Zum Abkühlen hecheln sie deshalb vor allem, dabei verdunstet Wasser in Maul und Rachen.'],

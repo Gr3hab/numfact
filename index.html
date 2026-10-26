@@ -224,6 +224,7 @@ a{color:var(--ink)}
 .result .eyebrow{margin-bottom:6px}
 .result .daydone{margin:0;font-weight:700}
 .result .streak{margin:0;font-size:.92rem}
+.result .streak.note{color:var(--muted)}
 .result .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
 .countdown{font-family:var(--display);font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink)}
 
@@ -623,7 +624,7 @@ const STR = {
     source: 'Quelle', sources: 'Quellen',
     share: 'Ergebnis teilen', next: m => `Weiter mit ${m}`, statsBtn: 'Statistik',
     dayDone: 'Alle vier Codes für heute erledigt. Neue Codes in',
-    streak: n => n === 1 ? 'Deine Serie: 1 Tag' : `Deine Serie: ${n} Tage`,
+    streak: n => n === 1 ? 'Deine Serie: 1 Tag' : `Deine Serie: ${n} Tage`, archiveNoStreak: 'Archivrätsel zählen nicht für die Serie.',
     copied: 'Ergebnis kopiert. Jetzt in WhatsApp & Co. einfügen', copiedBtn: 'Kopiert ✓',
     stats: { title: 'Statistik', played: 'Rätseltage', streak: 'Serie', best: 'Beste Serie', cracked: 'Codes geknackt', byMode: 'Nach Stufe', solved: 'Gelöst', clean: 'Ohne Hilfe', bestTime: 'Bestzeit*', week: 'Letzte 7 Tage',
       weekSr: (d, s) => `${d}: ${s} von 4 am selben Tag gelöst`,
@@ -721,7 +722,7 @@ const STR = {
     source: 'Source', sources: 'Sources',
     share: 'Share result', next: m => `Next: ${m}`, statsBtn: 'Statistics',
     dayDone: 'All four codes done for today. New codes in',
-    streak: n => n === 1 ? 'Your streak: 1 day' : `Your streak: ${n} days`,
+    streak: n => n === 1 ? 'Your streak: 1 day' : `Your streak: ${n} days`, archiveNoStreak: 'Archive puzzles do not count towards your streak.',
     copied: 'Result copied. Paste it into WhatsApp or anywhere else', copiedBtn: 'Copied ✓',
     stats: { title: 'Statistics', played: 'Puzzle days', streak: 'Streak', best: 'Best streak', cracked: 'Codes cracked', byMode: 'By level', solved: 'Solved', clean: 'No help', bestTime: 'Best time*', week: 'Last 7 days',
       weekSr: (d, s) => `${d}: ${s} of 4 solved on the day`,
@@ -1238,6 +1239,8 @@ function renderResult() {
     `<p class="more">${esc(p.fact.m)}</p>` +
     (src.length ? `<p class="src">${esc(src.length > 1 ? t.sources : t.source)}: ${src.map(x => `<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.name || hostOf(x.url))}</a>`).join(' · ')}</p>` : '') +
     (streak ? `<p class="streak">${esc(t.streak(streak))}</p>` : '') +
+    // Wer über einen alten Link kommt, sieht hier, warum die Serie nicht wächst (die Archivleiste bleibt kurz)
+    (archive ? `<p class="streak note">${esc(t.archiveNoStreak)}</p>` : '') +
     (allDone && !archive ? `<p class="daydone">${esc(t.dayDone)} <span class="countdown" data-countdown></span>.</p>` : '') +
     '<div class="actions">' +
       `<button class="btn primary" type="button" data-act="share">${ICON.share}${esc(t.share)}</button>` +

@@ -699,11 +699,27 @@ test('Schnell tippen: nach einem vollen, falschen Wort geht es im nächsten weit
   await page.context().close();
 });
 
-test('Archivleiste ist kurz und der Knopf passt daneben', async () => {
-  const page = await openPage(env, { url: '?n=2', width: 412, height: 800 });
+test('Archivleiste ist kurz und der Knopf passt daneben; das Ergebnis sagt, dass Archivrätsel nicht für die Serie zählen', async () => {
+  let page = await openPage(env, { url: '?n=2&m=easy', width: 412, height: 800 });
   assert.equal((await page.textContent('#archiveText')).trim(), 'Archiv: #2 vom Do., 22. Okt.');
   const h = await page.evaluate(() => Math.round(document.getElementById('archiveBar').getBoundingClientRect().height));
   assert.ok(h <= 52, `Archivleiste ${h} px hoch`);
+  await page.click('#startBtn');
+  for (const w of solution(2, 'de', 'easy')) await typeWord(page, w);
+  assert.match(await page.textContent('#result'), /Archivrätsel zählen nicht für die Serie\./);
+  assert.doesNotMatch(await page.textContent('#result'), /Deine Serie/);
+  await page.context().close();
+  // Rätsel von heute: Serie statt Archiv-Hinweis; Englisch
+  page = await openPage(env);
+  await page.click('#startBtn');
+  for (const w of solution(4, 'de', 'easy')) await typeWord(page, w);
+  assert.match(await page.textContent('#result'), /Deine Serie: 1 Tag/);
+  assert.doesNotMatch(await page.textContent('#result'), /Archivrätsel/);
+  await page.context().close();
+  page = await openPage(env, { url: '?n=2&m=easy', locale: 'en-GB' });
+  await page.click('#startBtn');
+  for (const w of solution(2, 'en', 'easy')) await typeWord(page, w);
+  assert.match(await page.textContent('#result'), /Archive puzzles do not count towards your streak\./);
   await page.context().close();
 });
 

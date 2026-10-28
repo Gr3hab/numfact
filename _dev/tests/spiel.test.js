@@ -687,16 +687,69 @@ test('Schnell tippen: nach einem vollen, falschen Wort geht es im nächsten weit
   assert.equal((await typed())[2], 'NEUTRONENSTERQ');
   assert.equal(await page.getAttribute('.w[data-w="2"]', 'aria-current'), 'true');
   await page.context().close();
-  // „ss“ am Wortende wird weiterhin zu ß (#20, Impossible: HIEß)
+  // Ab #9 gibt es kein ß mehr in den Kästchen: HIESS wird einfach getippt (#20, Impossible)
   page = await openPage(env, { time: '2026-11-09T10:00:00+01:00' });
   await page.click('#tab-impossible');
   await page.click('#startBtn');
   await page.click('.c[data-w="3"][data-i="0"]');
   await page.keyboard.type('HIESS');
   const s = await state(page, '2026-11-09', 'impossible');
-  assert.equal(s.typed[3], 'HIEß');
+  assert.equal(s.typed[3], 'HIESS');
   assert.ok(await page.isVisible('.w[data-w="3"].ok'));
   await page.context().close();
+});
+
+// Playwright kennt keine Umlaut-Tasten: so, wie eine deutsche Tastatur die Taste meldet
+const umlautKey = (pg, k) => pg.evaluate(k => (document.activeElement || document.body).dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true })), k);
+
+test('Ab #9 nur 26 Buchstaben: Tastatur ohne Ä Ö Ü ß, Umlaute als AE, OE, UE, SS; das Archiv bis #8 bleibt wie erschienen', async () => {
+  const page = await openPage(env, { time: '2026-10-29T10:00:00+01:00' });
+  assert.equal(await issueNumber(page), 9);
+  const keys = await page.$$eval('#kb .k[data-k]', ks => ks.map(k => k.dataset.k).filter(k => k.length === 1).join(''));
+  assert.equal([...keys].sort().join(''), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'genau 26 Buchstabentasten');
+  // Easy #9 hat keine Umlaute: kein Hinweis, der nur verwirrt
+  assert.equal(await page.isVisible('#startCard .note'), false);
+  // Mirror #9: PFERDE KOENNEN … – der Hinweis erklärt die Schreibweise, die echte Taste Ö tippt O und E
+  await page.click('#tab-mirror');
+  assert.match((await page.textContent('#startCard .note')).replace(/\u00a0/g, ' '), /wie im Kreuzworträtsel als AE, OE, UE und SS/);
+  await page.click('#startBtn');
+  await page.keyboard.type('PFERDE');
+  await page.keyboard.type('K');
+  await umlautKey(page, 'ö');                             // wie die Ö-Taste einer deutschen Tastatur
+  await page.keyboard.type('NNEN');
+  let s = await state(page, '2026-10-29', 'mirror');
+  assert.deepEqual(s.typed.slice(0, 2), ['PFERDE', 'KOENNEN']);
+  assert.ok(await page.isVisible('.w[data-w="1"].ok'));
+  // Zahlen: A = 26 … Z = 1 ohne Ausnahme, K O E N N E N
+  const codes = await page.evaluate(() => NF.buildDay('2026-10-29', 'de').puzzles.mirror.words[1].codes.join(' '));
+  assert.equal(codes, '16 12 22 13 13 22 13');
+  // Anleitung nennt die Regel in einem Satz
+  await page.click('#helpBtn');
+  const help = (await page.textContent('#helpBody')).replace(/\u00a0/g, ' ');
+  assert.match(help, /Umlaute schreibst du wie im Kreuzworträtsel: Ä = AE, Ö = OE, Ü = UE, ß = SS/);
+  assert.doesNotMatch(help, /27/);
+  assert.match(await page.textContent('#helpBody .eyebrow'), /^Das tägliche Zahlenrätsel$/, 'deutsche Anleitung ohne englischen Spruch');
+  assert.equal(await page.title(), 'NUMIGMA · Knacke den Code. Entdecke den Fakt.');
+  await page.keyboard.press('Escape');
+  noErrors(page);
+  await page.context().close();
+  // Archiv #8: so, wie es erschienen ist, mit Ä Ö Ü ß auf der Tastatur und der alten Regel
+  const old = await openPage(env, { time: '2026-10-29T10:00:00+01:00', url: '?n=8&m=mirror' });
+  assert.equal(await issueNumber(old), 8);
+  assert.equal(await old.$$eval('#kb .k[data-k="Ä"], #kb .k[data-k="ß"]', k => k.length), 2, 'Archiv #8 hat die Umlaut-Tasten');
+  assert.match((await old.textContent('#startCard .note')).replace(/\u00a0/g, ' '), /Ä = 27, Ö = 28, Ü = 29, ß = 30/);
+  await old.click('#startBtn');
+  await old.keyboard.type('K');
+  await umlautKey(old, 'ä');
+  await old.keyboard.type('NGURUS');
+  s = await state(old, '2026-10-28', 'mirror');
+  assert.equal(s.typed[0], 'KÄNGURUS');
+  // zurück zu heute: wieder 26 Tasten
+  await old.click('#backToday');
+  assert.equal(await issueNumber(old), 9);
+  assert.equal(await old.$$eval('#kb .k[data-k="Ä"]', k => k.length), 0);
+  noErrors(old);
+  await old.context().close();
 });
 
 test('Archivleiste ist kurz und der Knopf passt daneben; das Ergebnis sagt, dass Archivrätsel nicht für die Serie zählen', async () => {

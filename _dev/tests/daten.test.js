@@ -14,6 +14,9 @@ const MODES = Array.from(NF.MODES, m => m.id);
 // Ergebnisse aus kern.js stammen aus einer eigenen JavaScript-Umgebung: für Vergleiche in normale Werte umwandeln
 const plain = x => JSON.parse(JSON.stringify(x));
 const check = today => plain(NF.checkFacts(today));
+// Ab #9 stehen Umlaute als AE, OE, UE, SS in den Kästchen. So sieht ein älterer Code-Stand nach der Umstellung aus:
+const az = sig => sig.replace(/[ÄÖÜß]/g, c => NF.DIGRAPH[c]);
+const AZ_FROM = NF.dayIndex(NF.CONFIG.lettersFrom) + 1;   // Rätselnummer, ab der nur A–Z gilt (#9)
 
 test('Faktenliste lädt und hat feste, fortlaufende IDs', () => {
   assert.ok(Array.isArray(F) && F.length >= 64, 'NUMIGMA_FACTS fehlt oder ist zu kurz');
@@ -37,14 +40,42 @@ test('Quellen haben Name und https-Adresse', () => {
   }));
 });
 
-test('Veröffentlichte Rätsel #1–#16 sind unverändert (Deutsch und Englisch)', () => {
+test('Veröffentlichte Rätsel #1–#16 sind unverändert (Deutsch und Englisch); ab #9 nur Umlaute als AE, OE, UE, SS', () => {
+  assert.equal(AZ_FROM, 9, 'Umstellung auf A–Z gilt ab #9 (29. Oktober 2026)');
   for (const lang of ['de', 'en']) {
     SNAP[lang].forEach(day => {
       const d = NF.buildDay(NF.keyOfNumber(day.n), lang);
       assert.equal(d.shift, day.shift, `${lang} #${day.n}: Verschiebung`);
-      assert.deepEqual(MODES.map(m => d.puzzles[m].sig), day.sigs, `${lang} #${day.n}: Sätze oder Stufen geändert`);
+      // #1–#8 Zeichen für Zeichen gleich, #9–#16 dieselben Sätze in denselben Stufen, nur Umlaute ausgeschrieben
+      const want = day.n < AZ_FROM ? day.sigs : day.sigs.map(az);
+      assert.deepEqual(MODES.map(m => d.puzzles[m].sig), want, `${lang} #${day.n}: Sätze oder Stufen geändert`);
     });
   }
+});
+
+test('Ab #9 nur A–Z: Umlaute als AE, OE, UE, SS, Zahlen 1 bis 26 in jeder Stufe; bis #8 Ä, Ö, Ü, ß wie erschienen', () => {
+  let words = 0;
+  for (let i = 0; i < NF.plannedDays(); i++) {
+    for (const lang of ['de', 'en']) {
+      const d = NF.buildDay(NF.addDays(NF.CONFIG.launchDate, i), lang);
+      assert.equal(d.az, i + 1 >= AZ_FROM, `#${i + 1}`);
+      if (!d.az) continue;
+      MODES.forEach(m => d.puzzles[m].words.forEach(w => {
+        assert.match(w.plain, /^[A-Z]+$/, `${lang} #${i + 1} ${m}: ${w.plain}`);
+        w.codes.forEach(c => assert.ok(c >= 1 && c <= 26, `${lang} #${i + 1} ${m}: Zahl ${c}`));
+        if (/[äöüß]/i.test(w.show)) words++;
+      }));
+    }
+  }
+  assert.ok(words > 100, 'Umlaut-Wörter ab #9 gefunden');
+  // Beispiel #9 Impossible: RÜCKWÄRTS → RUECKWAERTS, Mirror A = 26 … Z = 1 ohne Ausnahmen
+  const d9 = NF.buildDay(NF.keyOfNumber(9), 'de');
+  assert.equal(d9.puzzles.impossible.sig, 'KOLIBRIS KOENNEN RUECKWAERTS FLIEGEN');
+  assert.deepEqual(Array.from(d9.puzzles.mirror.words[1].codes), [...'KOENNEN'].map(c => 27 - (c.charCodeAt(0) - 64)));
+  assert.equal(NF.plainOf('Grüße', true), 'GRUESSE');
+  assert.equal(NF.plainOf('Grüße', false), 'GRÜßE');
+  // #8 bleibt, wie es erschienen ist
+  assert.equal(NF.buildDay(NF.keyOfNumber(8), 'de').puzzles.easy.words[0].plain, 'FUßSPUREN');
 });
 
 test('Rätsel, die schon irgendwo auf der Welt live sind, gleichen dem letzten Stand von main', t => {
@@ -58,7 +89,8 @@ test('Rätsel, die schon irgendwo auf der Welt live sind, gleichen dem letzten S
       try { b = base.NF.buildDay(key, lang); } catch (e) { continue; }
       const c = NF.buildDay(key, lang);
       assert.equal(c.shift, b.shift, `${lang} #${i + 1} Verschiebung weicht von ${base.ref} ab`);
-      MODES.forEach(m => assert.equal(c.puzzles[m].sig, b.puzzles[m].sig, `${lang} #${i + 1} ${m} weicht von ${base.ref} ab`));
+      // Einzige erlaubte Änderung: ab #9 Umlaute als AE, OE, UE, SS (wenn der Vergleichsstand das noch nicht hatte)
+      MODES.forEach(m => assert.equal(c.puzzles[m].sig, c.az && !b.az ? az(b.puzzles[m].sig) : b.puzzles[m].sig, `${lang} #${i + 1} ${m} weicht von ${base.ref} ab`));
     }
   }
 });
@@ -154,7 +186,8 @@ test('Vorrat: reicht mindestens bis 30. November 2026, Wiederholung ist sichtbar
   const after = NF.addDays(NF.CONFIG.launchDate, P + 2);
   const rep = NF.buildDay(after, 'de'), src = NF.buildDay(NF.addDays(NF.CONFIG.launchDate, 2), 'de');
   assert.equal(rep.repeatOf, 3);
-  MODES.forEach(m => assert.equal(rep.puzzles[m].sig, src.puzzles[m].sig));
+  // Wiederholung: dieselben Sätze in denselben Stufen, geschrieben nach der Regel ihres Tages (ab #9 nur A–Z)
+  MODES.forEach(m => assert.equal(rep.puzzles[m].sig, az(src.puzzles[m].sig)));
   assert.equal(NF.buildDay(NF.lastPlannedDay(), 'de').repeatOf, null);
   // Warnung, wenn der Vorrat knapp wird
   const late = NF.addDays(NF.lastPlannedDay(), -5);

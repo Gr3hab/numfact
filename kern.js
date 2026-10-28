@@ -13,6 +13,9 @@ const CONFIG = {
   hintsPerPuzzle: 3,
   maxCells: 18,               // so viele Kästchen passen auf kleinen Handys (360 px) in eine Zeile
   frozenDays: 16,             // #1–#16 behalten ihre ursprüngliche Zuordnung (nicht ändern)
+  // Ab diesem Tag (#9) gibt es nur A–Z: Ä, Ö, Ü, ß stehen wie im Kreuzworträtsel als AE, OE, UE, SS.
+  // Davor (#1–#8) hatten sie die festen Zahlen 27–30. Nicht ändern, sonst ändern sich erschienene Rätsel.
+  lettersFrom: '2026-10-29',
   warnDays: 14,               // Warnung, wenn der Faktenvorrat für weniger Tage reicht
   // Nur nötig, falls der Vorrat einmal ausgegangen ist: Zeiträume, in denen Wiederholungen liefen.
   // Vor dem Anhängen neuer Fakten hier eintragen, z. B. [['2027-02-01', '2027-02-04']],
@@ -40,7 +43,8 @@ const TOPICS = {
   oesterreich: { de: 'Österreich', en: 'Austria' }
 };
 
-// Alphabet: A–Z plus Ä, Ö, Ü, ß mit festen Zahlen 27–30 (in jeder Stufe gleich)
+// Alphabet ab #9: A–Z, Umlaute als AE, OE, UE, SS (siehe CONFIG.lettersFrom).
+// Bis #8: A–Z plus Ä, Ö, Ü, ß mit festen Zahlen 27–30 (in jeder Stufe gleich), damit erschienene Rätsel gleich bleiben.
 const ALPHABET = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜß'];
 const SPECIAL = { 'Ä': 27, 'Ö': 28, 'Ü': 29, 'ß': 30 };
 const DIGRAPH = { 'Ä': 'AE', 'Ö': 'OE', 'Ü': 'UE', 'ß': 'SS' };
@@ -57,6 +61,13 @@ function symStr(str) {
   }
   return out;
 }
+
+// Wort für die Kästchen: ab #9 nur A–Z (Ä → AE, Ö → OE, Ü → UE, ß → SS), bis #8 mit Ä, Ö, Ü, ß
+function plainOf(str, az) {
+  const s = symStr(str);
+  return az ? s.replace(/[ÄÖÜß]/g, c => DIGRAPH[c]) : s;
+}
+const azDay = idx => idx >= dayIndex(CONFIG.lettersFrom);
 
 function letterCode(ch, mode, shift) {
   if (SPECIAL[ch]) return SPECIAL[ch];
@@ -123,10 +134,10 @@ function assignment(dayIdx, lang) {
   return [s[1], s[3], s[2], s[0]];   // easy, hard, mirror, impossible
 }
 
-function makePuzzle(fact, mode, shift) {
-  const words = fact.t.split(/\s+/).map(w => ({ show: w, plain: symStr(w) })).filter(w => w.plain);
+function makePuzzle(fact, mode, shift, az) {
+  const words = fact.t.split(/\s+/).map(w => ({ show: w, plain: plainOf(w, az) })).filter(w => w.plain);
   words.forEach(w => { w.codes = [...w.plain].map(ch => letterCode(ch, mode, shift)); });
-  return { fact, mode, words, sig: words.map(w => w.plain).join(' ') };
+  return { fact, mode, words, sig: words.map(w => w.plain).join(' '), az: !!az };
 }
 
 // Ist der Vorrat aufgebraucht, wird ein früherer Tag bewusst und sichtbar wiederholt (repeatOf).
@@ -149,9 +160,9 @@ function buildDay(key, lang) {
   const so = sourceOf(idx), src = so.src, repeatOf = so.repeat ? src + 1 : null;
   const picks = assignment(src, lang);
   const shift = 3 + Math.floor(mulberry32(idx * 7919 + 101)() * 21); // 3 … 23
-  const puzzles = {};
-  MODES.forEach((m, i) => { puzzles[m.id] = makePuzzle(view(picks[i], lang), m.id, shift); });
-  return { key, lang, number: idx + 1, shift, puzzles, repeatOf };
+  const az = azDay(idx), puzzles = {};
+  MODES.forEach((m, i) => { puzzles[m.id] = makePuzzle(view(picks[i], lang), m.id, shift, az); });
+  return { key, lang, number: idx + 1, shift, puzzles, repeatOf, az };
 }
 
 // Breite eines Worts in Kästchen. Easy: eine Zahl pro Buchstaben-Kästchen. Sonst: zwei Ziffern pro Kästchen.
@@ -162,7 +173,7 @@ function wordUnits(w, mode) {
 
 /* ------------------------------------------------------------ Prüfungen für Redaktion und Tests */
 function worstUnits(word) {
-  const p = symStr(word), w = { plain: p, codes: [] };
+  const p = plainOf(word, true), w = { plain: p, codes: [] };   // künftige Tage: Umlaute als AE, OE, UE, SS
   let worst = [...p].length;
   ['hard', 'mirror'].forEach(m => { w.codes = [...p].map(c => letterCode(c, m, 0)); worst = Math.max(worst, wordUnits(w, m)); });
   for (let s = 3; s <= 23; s++) { w.codes = [...p].map(c => letterCode(c, 'impossible', s)); worst = Math.max(worst, wordUnits(w, 'impossible')); }
@@ -215,6 +226,6 @@ function checkFacts(today) {
   return out;
 }
 
-window.NF = { CONFIG, MODES, TOPICS, ALPHABET, SPECIAL, DIGRAPH, FROZEN, symStr, letterCode, mulberry32, todayKey, parseKey, dayIndex, addDays, keyOfNumber,
+window.NF = { CONFIG, MODES, TOPICS, ALPHABET, SPECIAL, DIGRAPH, FROZEN, symStr, plainOf, letterCode, mulberry32, todayKey, parseKey, dayIndex, addDays, keyOfNumber,
   list, facts, byId, plannedDays, lastPlannedDay, sourceOf, assignment, buildDay, wordUnits, checkFacts };
 })();

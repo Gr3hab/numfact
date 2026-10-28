@@ -1,7 +1,7 @@
 {
  "390-de-hell Kurz-Einstieg passt ohne Scrollen": true,
  "390-de-hell Code bei offenem Dialog sichtbar": false,
- "390-de-hell Anleitung Höhe px (zugeklappt)": 512,
+ "390-de-hell Anleitung Höhe px (zugeklappt)": 497,
  "390-en-dunkel Kurz-Einstieg passt ohne Scrollen": true,
  "390-en-dunkel Code bei offenem Dialog sichtbar": false,
  "390-en-dunkel Anleitung Höhe px (zugeklappt)": 512,
@@ -23,10 +23,10 @@
    14
   ],
   "avgLetters": {
-   "easy": 37,
-   "hard": 47,
-   "mirror": 41,
-   "impossible": 31
+   "easy": 38,
+   "hard": 48,
+   "mirror": 42,
+   "impossible": 32
   }
  }
 }

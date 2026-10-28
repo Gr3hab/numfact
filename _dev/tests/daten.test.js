@@ -42,27 +42,27 @@ test('Quellen haben Name und https-Adresse', () => {
   }));
 });
 
-test('Veröffentlichte Rätsel #1–#8 sind unverändert (Deutsch und Englisch)', () => {
-  // Am 28.10.2026 bekamen #9–#16 neue Fakten ohne Umlaute (vorher eingefroren, aber noch nicht erschienen).
+test('Veröffentlichte Rätsel #1–#8 behalten Sätze, Stufen und Verschiebung (Umlaute seit 28.10.2026 als AE, OE, UE, SS)', () => {
+  // Am 28.10.2026 bekamen #9–#16 neue Fakten ohne Umlaute (vorher eingefroren, aber noch nicht erschienen),
+  // und in #1–#8 stehen Ä, Ö, Ü, ß seitdem wie im Kreuzworträtsel als AE, OE, UE, SS: nur noch A–Z im ganzen Spiel.
   assert.equal(AZ_FROM, 9, 'Umstellung auf A–Z gilt ab #9 (29. Oktober 2026)');
   assert.equal(NF.CONFIG.frozenDays, 8);
   for (const lang of ['de', 'en']) {
     SNAP[lang].filter(day => day.n < AZ_FROM).forEach(day => {
       const d = NF.buildDay(NF.keyOfNumber(day.n), lang);
       assert.equal(d.shift, day.shift, `${lang} #${day.n}: Verschiebung`);
-      assert.deepEqual(MODES.map(m => d.puzzles[m].sig), day.sigs, `${lang} #${day.n}: Sätze oder Stufen geändert`);
+      assert.deepEqual(MODES.map(m => d.puzzles[m].sig), day.sigs.map(az), `${lang} #${day.n}: Sätze oder Stufen geändert`);
     });
   }
 });
 
-test('Ab #9 nur A–Z: deutsche Sätze ohne Ä, Ö, Ü, ß, Zahlen 1 bis 26 in jeder Stufe; #1–#8 wie erschienen', () => {
+test('Nur A–Z an allen Tagen, Zahlen 1 bis 26 in jeder Stufe; ab #9 deutsche Sätze ganz ohne Ä, Ö, Ü, ß', () => {
   for (let i = 0; i < NF.plannedDays(); i++) {
     for (const lang of ['de', 'en']) {
       const d = NF.buildDay(NF.addDays(NF.CONFIG.launchDate, i), lang);
-      assert.equal(d.az, i + 1 >= AZ_FROM, `#${i + 1}`);
-      if (!d.az) continue;
+      assert.equal(d.az, true, `#${i + 1}`);
       MODES.forEach(m => {
-        assert.doesNotMatch(d.puzzles[m].fact.t, /[ÄÖÜäöüßẞ]/, `${lang} #${i + 1} ${m}: ${d.puzzles[m].fact.t}`);
+        if (i + 1 >= AZ_FROM) assert.doesNotMatch(d.puzzles[m].fact.t, /[ÄÖÜäöüßẞ]/, `${lang} #${i + 1} ${m}: ${d.puzzles[m].fact.t}`);
         d.puzzles[m].words.forEach(w => {
           assert.match(w.plain, /^[A-Z]+$/, `${lang} #${i + 1} ${m}: ${w.plain}`);
           w.codes.forEach(c => assert.ok(c >= 1 && c <= 26, `${lang} #${i + 1} ${m}: Zahl ${c}`));
@@ -73,11 +73,11 @@ test('Ab #9 nur A–Z: deutsche Sätze ohne Ä, Ö, Ü, ß, Zahlen 1 bis 26 in j
   // Mirror ohne Ausnahme A = 26 … Z = 1
   const mir = NF.buildDay(NF.keyOfNumber(9), 'de').puzzles.mirror.words[0];
   assert.deepEqual(Array.from(mir.codes), [...mir.plain].map(c => 27 - (c.charCodeAt(0) - 64)));
-  // Notfalls (z. B. Wiederholung von #1–#8) stünden Umlaute wie im Kreuzworträtsel da
-  assert.equal(NF.plainOf('Grüße', true), 'GRUESSE');
-  assert.equal(NF.plainOf('Grüße', false), 'GRÜßE');
-  // #8 bleibt, wie es erschienen ist
-  assert.equal(NF.buildDay(NF.keyOfNumber(8), 'de').puzzles.easy.words[0].plain, 'FUßSPUREN');
+  // Umlaute in #1–#8 stehen wie im Kreuzworträtsel da
+  assert.equal(NF.plainOf('Grüße'), 'GRUESSE');
+  assert.equal(NF.buildDay(NF.keyOfNumber(8), 'de').puzzles.easy.words[0].plain, 'FUSSSPUREN');
+  assert.equal(NF.buildDay(NF.keyOfNumber(8), 'de').puzzles.mirror.words[0].plain, 'KAENGURUS');
+  assert.deepEqual([...NF.ALPHABET].join(''), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ');
 });
 
 test('Rätsel, die schon irgendwo auf der Welt live sind, gleichen dem letzten Stand von main', t => {
@@ -148,16 +148,12 @@ test('Verschlüsselung: Easy, Hard, Mirror, Impossible und Umlaute', () => {
   assert.equal(NF.letterCode('Z', 'mirror', 0), 1);
   assert.equal(NF.letterCode('A', 'impossible', 3), 4);
   assert.equal(NF.letterCode('Z', 'impossible', 3), 3);
-  for (const m of MODES) {
-    assert.equal(NF.letterCode('Ä', m, 7), 27); assert.equal(NF.letterCode('Ö', m, 7), 28);
-    assert.equal(NF.letterCode('Ü', m, 7), 29); assert.equal(NF.letterCode('ß', m, 7), 30);
-  }
   assert.equal(NF.symStr('Grüße, café!'), 'GRÜßECAFE');
   assert.equal(NF.symStr('ẞ'), 'ß');
   const d = NF.buildDay('2026-10-24', 'de');
   MODES.forEach(m => d.puzzles[m].words.forEach(w => {
     assert.equal(w.codes.length, [...w.plain].length);
-    w.codes.forEach(c => assert.ok(c >= 1 && c <= 30));
+    w.codes.forEach(c => assert.ok(c >= 1 && c <= 26));
   }));
 });
 

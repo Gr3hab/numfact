@@ -669,11 +669,9 @@ const STR = {
     ruleTitle: m => `Regel: ${m}`,
     shiftShort: s => [`A = ${s + 1} … Z = ${s}`, `um ${s} verschoben`],
     shiftLong: (s, past) => `Heute ${past ? 'war es' : 'ist es'} um ${s} verschoben: A = ${s + 1}, B = ${s + 2} … Z = ${s}`,
-    // Ab #9 nur A–Z, die Sätze haben keine Umlaute (falls doch: wie im Kreuzworträtsel). Bis #8 (Archiv) hatten Ä, Ö, Ü, ß eigene Zahlen und Tasten.
-    umlauts: (used, az) => az ? 'In diesem Satz stecken Umlaute oder ß. Sie stehen wie im Kreuzworträtsel als AE, OE, UE und SS.'
-      : `${used ? 'In diesem Satz stecken Umlaute oder ß: ' : 'Umlaute und ß: '}Ä = 27, Ö = 28, Ü = 29, ß = 30, in jeder Stufe gleich (Rätsel bis #8).`,
+    // Nur A–Z. Ab #9 haben die Sätze keine Umlaute; in #1–#8 (Archiv) stehen sie wie im Kreuzworträtsel da.
+    umlauts: 'In diesem Satz stecken Umlaute oder ß. Sie stehen wie im Kreuzworträtsel als AE, OE, UE und SS.',
     keyrows: [[...'QWERTZUIOP'], [...'ASDFGHJKL'], ['next', ...'YXCVBNM', 'back']],
-    keyrowsOld: [[...'QWERTZUIOPÜ'], [...'ASDFGHJKLÖÄ'], ['next', ...'YXCVBNMß', 'back']],
     shareHead: (n, a) => `${CONFIG.name} #${n}${a ? ' (Archiv)' : ''}`,
     beatOne: 'Schlägst du meine Zeit?', beatMany: 'Schlägst du meine Zeiten?', crackIt: "Schaffst du's?", notCracked: a => a ? 'Nicht geknackt 😅' : 'Heute nicht geknackt 😅'
   },
@@ -868,9 +866,28 @@ function upgrade(s) {
   }
   return s;
 }
+// Seit 28.10.2026 nur A–Z: Spielstände von #1–#8 mit Ä, Ö, Ü, ß umschreiben (Ä → AE …), statt sie zu verwerfen.
+// Gelöste Rätsel bleiben gelöst, angefangene behalten ihre Buchstaben und Tipps an der richtigen Stelle.
+function toAZ(s, p) {
+  const old = s.sig.split(' ');
+  s.typed = p.words.map((w, i) => {
+    const src = [...(old[i] || '')], t = [...(s.typed[i] || '')], out = [], map = [];
+    src.forEach((ch, j) => {
+      map[j] = out.length;
+      const c = t[j] && t[j] !== '_' ? t[j] : '_';
+      if (DIGRAPH[ch]) out.push(...(c === ch ? DIGRAPH[ch] : [c, '_'])); else out.push(c);
+    });
+    const hk = s.hints && s.hints[i];
+    if (Array.isArray(hk)) s.hints[i] = hk.map(k => map[k]).filter(k => k != null);
+    return out.join('').replace(/_+$/, '');
+  });
+  s.sig = p.sig;
+}
+const azSig = sig => sig.replace(/[ÄÖÜß]/g, c => DIGRAPH[c]);
 function msFor(key, id, p, l) {
   const st = dayState(key, l);
   let s = st[id];
+  if (s && typeof s === 'object' && typeof s.sig === 'string' && s.sig !== p.sig && azSig(s.sig) === p.sig && Array.isArray(s.typed)) { toAZ(s, p); save(); }
   if (!s || typeof s !== 'object' || s.sig !== p.sig) {
     s = st[id] = { sig: p.sig, typed: p.words.map(() => ''), hints: {}, hintCount: 0, cuts: [], status: 'open', elapsed: 0, given: [], helped: [] };
   }
@@ -1071,7 +1088,7 @@ function ruleHtml(withTip) {
   return `<p>${esc(r.text)}</p>` + (ex ? `<p class="ex">${esc(ex)}</p>` : '') +
     (withTip && current === 'impossible' && !finished(s) ? `<p class="tip">${esc(t.impTip)}</p>` : '') +
     (withTip && (current === 'hard' || current === 'mirror') && !finished(s) ? `<p class="tip">${esc(t.noNumbers)}</p>` : '') +
-    (t.umlauts && (um || (current === 'easy' && !p.az)) ? `<p class="note">${esc(t.umlauts(um, p.az))}</p>` : '');
+    (t.umlauts && um ? `<p class="note">${esc(t.umlauts)}</p>` : '');
 }
 
 function renderStart() {
@@ -1162,11 +1179,9 @@ function updateWord(wi) {
   if (act) we.el.setAttribute('aria-current', 'true'); else we.el.removeAttribute('aria-current');
 }
 
-let kbRows = '';
 function buildKeyboard() {
-  const t = T(), rows = day && !day.az && t.keyrowsOld ? t.keyrowsOld : t.keyrows;   // Archiv bis #8: mit Ä, Ö, Ü, ß
-  kbRows = lang + rows.flat().join('');
-  $('#kb').innerHTML = rows.map(row => '<div class="kr">' + row.map(k => {
+  const t = T();
+  $('#kb').innerHTML = t.keyrows.map(row => '<div class="kr">' + row.map(k => {
     if (k === 'next') return `<div class="k wide" data-k="next"><button type="button" aria-label="${esc(t.nextWord)}">${ICON.next}</button></div>`;
     if (k === 'back') return `<div class="k wide" data-k="back"><button type="button" aria-label="${esc(t.backspace)}">${ICON.back}</button></div>`;
     return `<div class="k" data-k="${k}"><button type="button"><b>${k}</b><i aria-hidden="true"></i></button></div>`;
@@ -1319,7 +1334,6 @@ function setMode(id, resume) {
 function setView(key, isArchive, mode, resume) {
   stopClock();
   day = buildDay(key, lang); archive = !!isArchive;
-  if (kbRows !== lang + ((!day.az && T().keyrowsOld) || T().keyrows).flat().join('')) buildKeyboard();
   const pick = mode && day.puzzles[mode] ? mode : (MODES.find(m => !finished(ms(m.id))) || MODES[0]).id;
   setMode(pick, resume);
 }
@@ -1388,7 +1402,7 @@ function nextCursor(cells, i, n) {
 function typeLetter(L) {
   const s = ms(current);
   if (s.status !== 'playing' || paused) return;
-  if (puz().az && DIGRAPH[L]) { [...DIGRAPH[L]].forEach(typeLetter); return; }   // ab #9: ä → A, E
+  if (DIGRAPH[L]) { [...DIGRAPH[L]].forEach(typeLetter); return; }   // nur A–Z: ä → A, E; ß → S, S
   ensureActive();
   if (aw == null) return;
   justAdvanced = false;

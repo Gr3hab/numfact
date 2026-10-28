@@ -13,9 +13,9 @@ const CONFIG = {
   hintsPerPuzzle: 3,
   maxCells: 18,               // so viele Kästchen passen auf kleinen Handys (360 px) in eine Zeile
   frozenDays: 8,              // #1–#8 behalten ihre ursprüngliche Zuordnung (nicht ändern)
-  // Ab diesem Tag (#9) gibt es nur A–Z: deutsche Sätze ohne Ä, Ö, Ü, ß (die Prüfung meldet sonst einen Fehler).
-  // Käme doch eines vor (z. B. bei einer Wiederholung von #1–#8), stünde es wie im Kreuzworträtsel als AE, OE, UE, SS.
-  // #1–#8 hatten Ä, Ö, Ü, ß mit den festen Zahlen 27–30. Nicht ändern, sonst ändern sich erschienene Rätsel.
+  // Das Spiel kennt nur die 26 Buchstaben A–Z, in jeder Stufe. Ab diesem Tag (#9) haben die deutschen Sätze
+  // kein Ä, Ö, Ü, ß mehr (die Prüfung meldet sonst einen Fehler). In #1–#8 stehen Umlaute seit dem 28.10.2026
+  // wie im Kreuzworträtsel als AE, OE, UE, SS (vorher hatten sie die Zahlen 27–30).
   lettersFrom: '2026-10-29',
   warnDays: 14,               // Warnung, wenn der Faktenvorrat für weniger Tage reicht
   // Nur nötig, falls der Vorrat einmal ausgegangen ist: Zeiträume, in denen Wiederholungen liefen.
@@ -44,13 +44,11 @@ const TOPICS = {
   oesterreich: { de: 'Österreich', en: 'Austria' }
 };
 
-// Alphabet ab #9: A–Z, Umlaute als AE, OE, UE, SS (siehe CONFIG.lettersFrom).
-// Bis #8: A–Z plus Ä, Ö, Ü, ß mit festen Zahlen 27–30 (in jeder Stufe gleich), damit erschienene Rätsel gleich bleiben.
-const ALPHABET = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜß'];
-const SPECIAL = { 'Ä': 27, 'Ö': 28, 'Ü': 29, 'ß': 30 };
+// Alphabet: nur A–Z. Umlaute in älteren Sätzen (#1–#8) stehen wie im Kreuzworträtsel als AE, OE, UE, SS.
+const ALPHABET = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'];
 const DIGRAPH = { 'Ä': 'AE', 'Ö': 'OE', 'Ü': 'UE', 'ß': 'SS' };
 
-// Text → Symbole: Großbuchstaben A–Z, Ä, Ö, Ü, ß; Akzente weg, alles andere raus
+// Text → Symbole: Großbuchstaben A–Z, Ä, Ö, Ü, ß; Akzente weg, alles andere raus (auch für Satzlängen und die Prüfung)
 function symStr(str) {
   let out = '';
   for (const c0 of String(str).normalize('NFC')) {
@@ -63,15 +61,12 @@ function symStr(str) {
   return out;
 }
 
-// Wort für die Kästchen: ab #9 nur A–Z (Ä → AE, Ö → OE, Ü → UE, ß → SS), bis #8 mit Ä, Ö, Ü, ß
-function plainOf(str, az) {
-  const s = symStr(str);
-  return az ? s.replace(/[ÄÖÜß]/g, c => DIGRAPH[c]) : s;
+// Wort für die Kästchen: nur A–Z (Ä → AE, Ö → OE, Ü → UE, ß → SS)
+function plainOf(str) {
+  return symStr(str).replace(/[ÄÖÜß]/g, c => DIGRAPH[c]);
 }
-const azDay = idx => idx >= dayIndex(CONFIG.lettersFrom);
 
 function letterCode(ch, mode, shift) {
-  if (SPECIAL[ch]) return SPECIAL[ch];
   const n = ch.charCodeAt(0) - 64;
   if (mode === 'mirror') return 27 - n;
   if (mode === 'impossible') return ((n - 1 + shift) % 26) + 1;
@@ -135,10 +130,10 @@ function assignment(dayIdx, lang) {
   return [s[1], s[3], s[2], s[0]];   // easy, hard, mirror, impossible
 }
 
-function makePuzzle(fact, mode, shift, az) {
-  const words = fact.t.split(/\s+/).map(w => ({ show: w, plain: plainOf(w, az) })).filter(w => w.plain);
+function makePuzzle(fact, mode, shift) {
+  const words = fact.t.split(/\s+/).map(w => ({ show: w, plain: plainOf(w) })).filter(w => w.plain);
   words.forEach(w => { w.codes = [...w.plain].map(ch => letterCode(ch, mode, shift)); });
-  return { fact, mode, words, sig: words.map(w => w.plain).join(' '), az: !!az };
+  return { fact, mode, words, sig: words.map(w => w.plain).join(' '), az: true };
 }
 
 // Ist der Vorrat aufgebraucht, wird ein früherer Tag bewusst und sichtbar wiederholt (repeatOf).
@@ -161,9 +156,10 @@ function buildDay(key, lang) {
   const so = sourceOf(idx), src = so.src, repeatOf = so.repeat ? src + 1 : null;
   const picks = assignment(src, lang);
   const shift = 3 + Math.floor(mulberry32(idx * 7919 + 101)() * 21); // 3 … 23
-  const az = azDay(idx), puzzles = {};
-  MODES.forEach((m, i) => { puzzles[m.id] = makePuzzle(view(picks[i], lang), m.id, shift, az); });
-  return { key, lang, number: idx + 1, shift, puzzles, repeatOf, az };
+  const puzzles = {};
+  MODES.forEach((m, i) => { puzzles[m.id] = makePuzzle(view(picks[i], lang), m.id, shift); });
+  // az: nur A–Z (seit 28.10.2026 an allen Tagen). Ältere Stände von kern.js kennen das Feld nicht.
+  return { key, lang, number: idx + 1, shift, puzzles, repeatOf, az: true };
 }
 
 // Breite eines Worts in Kästchen. Easy: eine Zahl pro Buchstaben-Kästchen. Sonst: zwei Ziffern pro Kästchen.
@@ -174,7 +170,7 @@ function wordUnits(w, mode) {
 
 /* ------------------------------------------------------------ Prüfungen für Redaktion und Tests */
 function worstUnits(word) {
-  const p = plainOf(word, true), w = { plain: p, codes: [] };   // künftige Tage: Umlaute als AE, OE, UE, SS
+  const p = plainOf(word), w = { plain: p, codes: [] };
   let worst = [...p].length;
   ['hard', 'mirror'].forEach(m => { w.codes = [...p].map(c => letterCode(c, m, 0)); worst = Math.max(worst, wordUnits(w, m)); });
   for (let s = 3; s <= 23; s++) { w.codes = [...p].map(c => letterCode(c, 'impossible', s)); worst = Math.max(worst, wordUnits(w, 'impossible')); }
@@ -229,6 +225,6 @@ function checkFacts(today) {
   return out;
 }
 
-window.NF = { CONFIG, MODES, TOPICS, ALPHABET, SPECIAL, DIGRAPH, FROZEN, symStr, plainOf, letterCode, mulberry32, todayKey, parseKey, dayIndex, addDays, keyOfNumber,
+window.NF = { CONFIG, MODES, TOPICS, ALPHABET, DIGRAPH, FROZEN, symStr, plainOf, letterCode, mulberry32, todayKey, parseKey, dayIndex, addDays, keyOfNumber,
   list, facts, byId, plannedDays, lastPlannedDay, sourceOf, assignment, buildDay, wordUnits, checkFacts };
 })();

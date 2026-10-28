@@ -6,7 +6,7 @@
  "390-en-dunkel Code bei offenem Dialog sichtbar": false,
  "390-en-dunkel Anleitung Höhe px (zugeklappt)": 512,
  "320-de-hell Kurz-Einstieg passt ohne Scrollen": true,
- "320 px: Tastenbreite px": 25.6,
+ "320 px: Tastenbreite px": 28.5,
  "320-de-hell Code bei offenem Dialog sichtbar": false,
  "320-de-hell Anleitung Höhe px (zugeklappt)": 540,
  "Hilfe-Farben: Teilen-Text nach Schlüssel (Wort 1) und überschriebenem Tipp (Wort 2)": "NUMIGMA #4 · Hard ⏱ 0:02\n🟨🟨🟩🟩🟩🟩🟩\nSchlägst du meine Zeit? https://gr3hab.github.io/numfact/?n=4&m=hard",
@@ -21,7 +21,7 @@
    "easy": 36,
    "hard": 45,
    "mirror": 40,
-   "impossible": 29
+   "impossible": 30
   }
  }
 }

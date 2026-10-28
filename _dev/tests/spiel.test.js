@@ -687,46 +687,34 @@ test('Schnell tippen: nach einem vollen, falschen Wort geht es im nächsten weit
   assert.equal((await typed())[2], 'NEUTRONENSTERQ');
   assert.equal(await page.getAttribute('.w[data-w="2"]', 'aria-current'), 'true');
   await page.context().close();
-  // Ab #9 gibt es kein ß mehr in den Kästchen: HIESS wird einfach getippt (#20, Impossible)
-  page = await openPage(env, { time: '2026-11-09T10:00:00+01:00' });
-  await page.click('#tab-impossible');
-  await page.click('#startBtn');
-  await page.click('.c[data-w="3"][data-i="0"]');
-  await page.keyboard.type('HIESS');
-  const s = await state(page, '2026-11-09', 'impossible');
-  assert.equal(s.typed[3], 'HIESS');
-  assert.ok(await page.isVisible('.w[data-w="3"].ok'));
-  await page.context().close();
 });
 
 // Playwright kennt keine Umlaut-Tasten: so, wie eine deutsche Tastatur die Taste meldet
 const umlautKey = (pg, k) => pg.evaluate(k => (document.activeElement || document.body).dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true })), k);
 
-test('Ab #9 nur 26 Buchstaben: Tastatur ohne Ä Ö Ü ß, Umlaute als AE, OE, UE, SS; das Archiv bis #8 bleibt wie erschienen', async () => {
+test('Ab #9 nur 26 Buchstaben: Tastatur ohne Ä Ö Ü ß, Sätze ohne Umlaute; das Archiv bis #8 bleibt wie erschienen', async () => {
   const page = await openPage(env, { time: '2026-10-29T10:00:00+01:00' });
   assert.equal(await issueNumber(page), 9);
   const keys = await page.$$eval('#kb .k[data-k]', ks => ks.map(k => k.dataset.k).filter(k => k.length === 1).join(''));
   assert.equal([...keys].sort().join(''), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'genau 26 Buchstabentasten');
-  // Easy #9 hat keine Umlaute: kein Hinweis, der nur verwirrt
-  assert.equal(await page.isVisible('#startCard .note'), false);
-  // Mirror #9: PFERDE KOENNEN … – der Hinweis erklärt die Schreibweise, die echte Taste Ö tippt O und E
+  // Kein Umlaut-Hinweis auf der Startkarte, in keiner Stufe
+  for (const m of ['easy', 'hard', 'mirror', 'impossible']) {
+    await page.click(`#tab-${m}`);
+    assert.equal(await page.isVisible('#startCard .note'), false, m);
+  }
+  // Mirror #9 lösen wie ein Mensch: nur A–Z
   await page.click('#tab-mirror');
-  assert.match((await page.textContent('#startCard .note')).replace(/\u00a0/g, ' '), /wie im Kreuzworträtsel als AE, OE, UE und SS/);
   await page.click('#startBtn');
-  await page.keyboard.type('PFERDE');
-  await page.keyboard.type('K');
-  await umlautKey(page, 'ö');                             // wie die Ö-Taste einer deutschen Tastatur
-  await page.keyboard.type('NNEN');
-  let s = await state(page, '2026-10-29', 'mirror');
-  assert.deepEqual(s.typed.slice(0, 2), ['PFERDE', 'KOENNEN']);
-  assert.ok(await page.isVisible('.w[data-w="1"].ok'));
-  // Zahlen: A = 26 … Z = 1 ohne Ausnahme, K O E N N E N
-  const codes = await page.evaluate(() => NF.buildDay('2026-10-29', 'de').puzzles.mirror.words[1].codes.join(' '));
-  assert.equal(codes, '16 12 22 13 13 22 13');
-  // Anleitung nennt die Regel in einem Satz
+  const sol = solution(9, 'de', 'mirror');
+  sol.forEach(w => assert.match(w, /^[A-Z]+$/));
+  for (const w of sol) await typeWord(page, w);
+  await page.waitForSelector('#result:not([hidden])');
+  const s = await state(page, '2026-10-29', 'mirror');
+  assert.equal(s.status, 'solved');
+  // Anleitung sagt es in einem Satz, deutscher Titel und deutsche Zeile über der Anleitung
   await page.click('#helpBtn');
   const help = (await page.textContent('#helpBody')).replace(/\u00a0/g, ' ');
-  assert.match(help, /Umlaute schreibst du wie im Kreuzworträtsel: Ä = AE, Ö = OE, Ü = UE, ß = SS/);
+  assert.match(help, /Es gibt nur die 26 Buchstaben A bis Z, keine Umlaute und kein ß\./);
   assert.doesNotMatch(help, /27/);
   assert.match(await page.textContent('#helpBody .eyebrow'), /^Das tägliche Zahlenrätsel$/, 'deutsche Anleitung ohne englischen Spruch');
   assert.equal(await page.title(), 'NUMIGMA · Knacke den Code. Entdecke den Fakt.');
@@ -742,8 +730,8 @@ test('Ab #9 nur 26 Buchstaben: Tastatur ohne Ä Ö Ü ß, Umlaute als AE, OE, UE
   await old.keyboard.type('K');
   await umlautKey(old, 'ä');
   await old.keyboard.type('NGURUS');
-  s = await state(old, '2026-10-28', 'mirror');
-  assert.equal(s.typed[0], 'KÄNGURUS');
+  const o = await state(old, '2026-10-28', 'mirror');
+  assert.equal(o.typed[0], 'KÄNGURUS');
   // zurück zu heute: wieder 26 Tasten
   await old.click('#backToday');
   assert.equal(await issueNumber(old), 9);

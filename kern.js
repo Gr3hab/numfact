@@ -12,9 +12,10 @@ const CONFIG = {
   storageKey: 'numfact.v2',   // nicht ändern, sonst gehen Spielstände verloren
   hintsPerPuzzle: 3,
   maxCells: 18,               // so viele Kästchen passen auf kleinen Handys (360 px) in eine Zeile
-  frozenDays: 16,             // #1–#16 behalten ihre ursprüngliche Zuordnung (nicht ändern)
-  // Ab diesem Tag (#9) gibt es nur A–Z: Ä, Ö, Ü, ß stehen wie im Kreuzworträtsel als AE, OE, UE, SS.
-  // Davor (#1–#8) hatten sie die festen Zahlen 27–30. Nicht ändern, sonst ändern sich erschienene Rätsel.
+  frozenDays: 8,              // #1–#8 behalten ihre ursprüngliche Zuordnung (nicht ändern)
+  // Ab diesem Tag (#9) gibt es nur A–Z: deutsche Sätze ohne Ä, Ö, Ü, ß (die Prüfung meldet sonst einen Fehler).
+  // Käme doch eines vor (z. B. bei einer Wiederholung von #1–#8), stünde es wie im Kreuzworträtsel als AE, OE, UE, SS.
+  // #1–#8 hatten Ä, Ö, Ü, ß mit den festen Zahlen 27–30. Nicht ändern, sonst ändern sich erschienene Rätsel.
   lettersFrom: '2026-10-29',
   warnDays: 14,               // Warnung, wenn der Faktenvorrat für weniger Tage reicht
   // Nur nötig, falls der Vorrat einmal ausgegangen ist: Zeiträume, in denen Wiederholungen liefen.
@@ -118,12 +119,12 @@ function lastPlannedDay() {
 
 /* ------------------------------------------------------------ Zuordnung zu Tagen und Stufen
    Tag #n nimmt die Fakten 4n-3 bis 4n der Liste.
-   #1–#16: Zuordnung exakt wie bei der ersten Veröffentlichung, je Sprache (eingefroren).
-   Ab #17: in beiden Sprachen gleich, nach gemeinsamer Länge (Deutsch + Englisch):
+   #1–#8: Zuordnung exakt wie bei der Veröffentlichung, je Sprache (eingefroren).
+   Ab #9: in beiden Sprachen gleich, nach gemeinsamer Länge (Deutsch + Englisch):
            kürzester Satz → Impossible, zweitkürzester → Easy, drittkürzester → Mirror, längster → Hard. */
 const FROZEN = {
-  de: [["n001","n002","n003","n004"],["n005","n006","n007","n008"],["n012","n009","n011","n010"],["n014","n013","n015","n016"],["n018","n017","n020","n019"],["n021","n023","n022","n024"],["n025","n026","n027","n028"],["n029","n032","n031","n030"],["n036","n033","n035","n034"],["n039","n038","n037","n040"],["n044","n042","n041","n043"],["n046","n045","n048","n047"],["n051","n052","n049","n050"],["n055","n053","n056","n054"],["n058","n057","n060","n059"],["n061","n063","n062","n064"]],
-  en: [["n001","n002","n003","n004"],["n005","n006","n007","n008"],["n009","n011","n012","n010"],["n014","n013","n015","n016"],["n018","n017","n020","n019"],["n021","n023","n022","n024"],["n025","n026","n027","n028"],["n029","n032","n031","n030"],["n035","n033","n036","n034"],["n039","n040","n037","n038"],["n041","n042","n044","n043"],["n046","n045","n047","n048"],["n051","n052","n049","n050"],["n055","n056","n053","n054"],["n058","n057","n060","n059"],["n061","n063","n062","n064"]]
+  de: [["n001","n002","n003","n004"],["n005","n006","n007","n008"],["n012","n009","n011","n010"],["n014","n013","n015","n016"],["n018","n017","n020","n019"],["n021","n023","n022","n024"],["n025","n026","n027","n028"],["n029","n032","n031","n030"]],
+  en: [["n001","n002","n003","n004"],["n005","n006","n007","n008"],["n009","n011","n012","n010"],["n014","n013","n015","n016"],["n018","n017","n020","n019"],["n021","n023","n022","n024"],["n025","n026","n027","n028"],["n029","n032","n031","n030"]]
 };
 const sentLen = f => [...symStr(f.de[0])].length + [...symStr(f.en[0])].length;
 function assignment(dayIdx, lang) {
@@ -192,6 +193,8 @@ function checkFacts(today) {
       const v = f[lang];
       if (!Array.isArray(v) || typeof v[0] !== 'string' || !v[0].trim()) { add('fehler', `${lang.toUpperCase()}: Satz fehlt`); return; }
       const bad = v[0].replace(lang === 'en' ? /[A-Za-z ]/g : /[A-Za-zÄÖÜäöüß ]/g, '').replace(/\.$/, '');
+      // Ab #9 nur A–Z: deutsche Sätze ohne Umlaute und ß (Erklärungen dürfen sie haben)
+      if (lang === 'de' && i >= dayIndex(CONFIG.lettersFrom) * 4 && /[ÄÖÜäöüßẞ]/.test(v[0])) add('fehler', `DE: Satz mit Ä, Ö, Ü oder ß („${v[0].split(/\s+/).filter(w => /[ÄÖÜäöüßẞ]/.test(w)).join(' ')}“). Ab #9 nur Sätze ohne Umlaute: umformulieren oder nach _dev/redaktion/geparkt-umlaute.js verschieben.`);
       if (bad) add('fehler', `${lang.toUpperCase()}: Zeichen, die im Code verschwinden: „${bad}“ (keine Ziffern, Kommas, Bindestriche oder Apostrophe${lang === 'en' ? ', keine Umlaute' : ''})`);
       if (!/\.$/.test(v[0])) add('hinweis', `${lang.toUpperCase()}: Satz endet nicht mit Punkt`);
       if (typeof v[1] !== 'string' || v[1].trim().length < 15) add('fehler', `${lang.toUpperCase()}: Erklärung fehlt oder ist sehr kurz`);
@@ -205,12 +208,12 @@ function checkFacts(today) {
       });
     });
   });
-  // Ab #17 kein Thema doppelt am selben Tag
+  // Ab #9 kein Thema doppelt am selben Tag
   for (let d = CONFIG.frozenDays; d < plannedDays(); d++) {
     const four = L.slice(d * 4, d * 4 + 4), topics = four.map(f => f && f.thema);
     topics.forEach((t, j) => { if (topics.indexOf(t) !== j) out.push({ i: d * 4 + j, id: four[j].id, level: 'hinweis', msg: `#${d + 1}: Thema „${t}“ kommt an diesem Tag mehrfach vor` }); });
   }
-  // Ab #17: Easy ist der Einstieg und soll kurz sein. Ziel 5 bis 7 Wörter, höchstens 8, in beiden Sprachen.
+  // Ab #9: Easy ist der Einstieg und soll kurz sein. Ziel 5 bis 7 Wörter, höchstens 8, in beiden Sprachen.
   const words = s => String(s).split(/\s+/).filter(w => symStr(w)).length;
   for (let d = CONFIG.frozenDays; d < plannedDays(); d++) {
     const e = assignment(d, 'de')[0];

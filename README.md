@@ -1,80 +1,33 @@
-# NUMIGMA
+# NUMIGMA → CIPHRO
 
-**Crack the code. Reveal the fact.**
+NUMIGMA heißt seit November 2026 **CIPHRO** und liegt unter **https://ciphro.eu** (Repository [`Gr3hab/ciphro`](https://github.com/Gr3hab/ciphro), dort auch der ganze Verlauf).
 
-Jeden Tag vier Zahlencodes von Easy bis Impossible. Hinter jedem steckt ein kurzer, wahrer Fakt. Auf Deutsch und Englisch. Kein Konto, keine Werbung, kein Tracking.
+Diese alte Adresse `https://gr3hab.github.io/numfact/` leitet nur noch weiter, damit alte Links (WhatsApp & Co.) und gespeicherte Spielstände nicht verloren gehen.
 
-Spielen: https://gr3hab.github.io/numfact/ · English: https://gr3hab.github.io/numfact/en/
+## Was hier passiert
 
-## Dateien
+| Datei | Aufgabe |
+| --- | --- |
+| `index.html` | Leitet nach `https://ciphro.eu/` weiter, mit denselben Angaben (`?n=…&m=…&lang=…`) |
+| `en/index.html` | Dasselbe nach `https://ciphro.eu/en/` |
+| `404.html` | Jede andere Adresse unter `/numfact/` landet ebenfalls bei ciphro.eu (`/en/…` auf Englisch) |
+| `sw.js` | Ersetzt die alte Offline-Hilfe: löscht deren Zwischenspeicher (`numigma-…`) und meldet sich ab |
+| `og*.png`, `icon*.png` | Bleiben für früher geteilte Vorschauen und Home-Bildschirm-Apps |
+| `_dev/` | Tests der Weiterleitung (für GitHub Pages unsichtbar) |
 
-| Datei | Inhalt | Öffentlich |
-| --- | --- | --- |
-| `index.html` | Das Spiel | ja |
-| `fakten.js` | Alle Fakten, Deutsch und Englisch, mit ID, Thema und Quellen | ja |
-| `kern.js` | Spiellogik: Codes, Tagesrätsel, Prüfungen | ja |
-| `en/index.html` | Englischer Einstieg für geteilte Links (englische Vorschau in WhatsApp & Co.) | ja |
-| `sw.js` | Offline-Hilfe: zuletzt geladene Fassung, wenn keine Verbindung da ist | ja |
-| `fonts/` | Schriften (lokal, keine Anfragen an fremde Server) | ja |
-| `og-de.png`, `og-en.png`, `icon*.png`, `manifest.webmanifest` | Vorschaubilder für geteilte Links (Deutsch und Englisch, gleiches Design, erzeugt mit `_dev/grafik/render.js`), App-Icons, Home-Bildschirm-App. `og.png` (englisch) bleibt für früher geteilte Links liegen | ja |
-| `_dev/` | Prüfseite, Tests, Redaktionsunterlagen, Nachweise | **nein** |
+**Spielstand:** Der Browser speichert pro Adresse. Die Weiterleitung liest deshalb den Spielstand dieser Adresse (`numfact.v2`) und gibt ihn im Anker mit: `#import=<Base64url von JSON>`. Der Anker wird nie an einen Server geschickt. ciphro.eu übernimmt den Stand, entfernt den Anker sofort und sagt einmal „NUMIGMA heißt jetzt CIPHRO. Dein Spielstand ist mitgekommen.“ Ohne Spielstand heißt der Anker `#moved`. Der Spielstand bleibt hier außerdem liegen, ein zweiter Besuch schadet nicht.
 
-GitHub Pages veröffentlicht Ordner, die mit `_` beginnen, nicht. Die Prüfseite mit allen Lösungen und alles für die Redaktion liegt deshalb in `_dev/`.
-
-**Was trotzdem öffentlich ist:** `fakten.js` muss abrufbar sein, damit das Spiel läuft. Darin stehen alle Sätze, auch die von künftigen Tagen. Wer gezielt in die Datei schaut, kann also vorab nachlesen. Für ein freundschaftliches Rätselspiel ist das bewusst so akzeptiert; die künftigen Lösungen sind nicht geheim, nur nicht mehr auf einer Seite zum Durchblättern. Eine tageweise Veröffentlichung ist in `_dev/KONZEPTE.md` beschrieben.
-
-## Links zum Teilen
-
-- `…/numfact/` öffnet das heutige Rätsel (alte Links funktionieren weiter).
-- `…/numfact/?n=4&m=easy` öffnet #4, Stufe Easy. `m` ist `easy`, `hard`, `mirror` oder `impossible`.
-- `…/numfact/en/?n=4&m=easy` dasselbe auf Englisch. `?lang=en` funktioniert weiterhin.
-- Ein Link auf ein Rätsel, das in der eigenen Zeitzone noch nicht erschienen ist, öffnet das heutige Rätsel mit einem Hinweis, wann es erscheint.
-- Die Linkvorschau (WhatsApp & Co.) sagt auf Deutsch, was NUMIGMA ist und dass es kostenlos ist, ohne Anmeldung und ohne Werbung. Das Bild `og-de.png` hat den deutschen Slogan „Knacke den Code. Entdecke den Fakt.“ `en/` hat eine eigene englische Vorschau mit `og-en.png`.
-
-## Regeln für die Uhr
-
-- Die Uhr startet mit „Start“. Vorher ist der Code nicht zu sehen.
-- Sie läuft nur, solange der Code sichtbar ist. Sie steht, wenn ein Menü offen ist, der Tab im Hintergrund liegt, die App verlassen wird, die Pause-Taste gedrückt wurde oder ein anderer Tab dasselbe Rätsel übernimmt. Solange sie steht, ist der Code verdeckt.
-- Nach dem Zurückkommen, Neuladen oder Wieder-Öffnen erscheint „Pausiert“ mit „Weiter“. Wechselt man selbst die Stufe oder Sprache, läuft die Uhr der neuen Stufe sofort.
-- Jede Stufe und jede Sprache hat ihre eigene Uhr. Die Zeit wird alle 5 Sekunden und beim Verlassen gespeichert.
-- Ergebnis, Stufen-Reiter, Teilen-Text und Statistik zeigen dieselbe, auf ganze Sekunden gerundete Zeit.
-
-## Farben und Teilen
-
-Im Ergebnis: 🟩 ohne Hilfe gelöst · 🟨 mit Tipp, Schlüssel oder Trennung · 🟥 aufgelöst. Einmal gelb bleibt gelb, auch wenn der aufgedeckte Buchstabe später überschrieben wird. Der Schlüssel bei Hard und Mirror kostet einen Tipp und gilt für genau den nächsten getippten Buchstaben; dessen Wort wird gelb. Die Zahlen bei Easy sind gratis und zählen nicht als Hilfe.
-
-Geteilt werden nur Stufen, die tatsächlich gelöst wurden; aufgelöste und nicht gespielte fehlen. Die Ergebnisanzeige im Spiel bleibt vollständig.
-
-Eine gelöste Stufe:
-```
-NUMIGMA #4 · Easy ⏱ 4:04
-🟩🟩🟩🟩🟩🟩🟩
-Schlägst du meine Zeit? https://gr3hab.github.io/numfact/?n=4&m=easy
-```
-Mehrere gelöste Stufen:
-```
-NUMIGMA #4
-Easy ⏱ 4:04 🟩🟩🟩🟩🟩🟩🟩
-Hard ⏱ 6:12 🟩🟨🟩🟩🟩
-Schlägst du meine Zeiten? https://gr3hab.github.io/numfact/?n=4
-```
-Keine gelöst:
-```
-NUMIGMA #4
-Heute nicht geknackt 😅
-Schaffst du's? https://gr3hab.github.io/numfact/?n=4
-```
-
-## Neue Fakten hinzufügen
-
-Ausführlich in [`_dev/redaktion/ANLEITUNG.md`](_dev/redaktion/ANLEITUNG.md). Kurz:
-
-1. In `fakten.js` **ganz unten** einen neuen Eintrag mit der nächsten ID anhängen (Deutsch, Englisch, Thema, Quelle).
-2. Bestehende Fakten von Tagen, die schon erschienen sind, nie ändern, umsortieren oder löschen. Die Tests prüfen das.
-3. Als Pull Request einreichen. Die Tests laufen automatisch, der Faktenbericht steht in der Zusammenfassung des Laufs.
-
-Satzregeln: nur Buchstaben und Leerzeichen, am Ende ein Punkt. Keine Ziffern, Kommas, Bindestriche oder Apostrophe. Ä, Ö, Ü und ß nur im Deutschen.
+**Linkvorschau:** Die Seiten hier zeigen schon Namen, Text und Bild von CIPHRO (Bilder von ciphro.eu), damit neu geteilte alte Links richtig aussehen.
 
 ## Tests
 
-Im Ordner `_dev`: `npm ci`, `npx playwright install chromium`, dann `npm test`. Details in [`_dev/README.md`](_dev/README.md). Dieselben Tests laufen bei jedem Pull Request auf GitHub. Jeden Montag prüft GitHub außerdem, ob der Faktenvorrat noch mindestens 14 Tage reicht, und meldet sich sonst per Mail.
+```
+cd _dev && npm install && npm test
+```
+
+Mit `CIPHRO_DIR=/pfad/zu/ciphro npm test` läuft zusätzlich der ganze Umzug mit dem echten neuen Spiel.
+
+## Reihenfolge beim Umstellen
+
+1. `Gr3hab/ciphro` ist unter https://ciphro.eu live (Pages, eigene Domain, HTTPS).
+2. Erst dann diese Weiterleitung nach `main` mergen.

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CIPHRO · Knacke den Code. Entdecke den Fakt.</title>
+<!-- Alte Adresse von NUMIGMA (jetzt CIPHRO). Die Linkvorschau (WhatsApp & Co.) zeigt schon den neuen Namen und das neue Bild. -->
+<meta name="description" content="Das tägliche Zahlenrätsel: Jede Zahl ist ein Buchstabe. Knacke den Code, dahinter steckt ein wahrer Fakt. Kostenlos, ohne Anmeldung, ohne Werbung.">
+<meta property="og:site_name" content="CIPHRO">
+<meta property="og:title" content="CIPHRO · Das tägliche Zahlenrätsel">
+<meta property="og:description" content="Jede Zahl ist ein Buchstabe. Knacke den Code, dahinter steckt ein wahrer Fakt. Kostenlos, ohne Anmeldung, ohne Werbung.">
+<meta property="og:locale" content="de_AT">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ciphro.eu/">
+<link rel="canonical" href="https://ciphro.eu/">
+<meta property="og:image" content="https://ciphro.eu/og-de.png?v=3">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="CIPHRO: Knacke den Code. Entdecke den Fakt.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" sizes="192x192" href="/numfact/icon-192.png">
+<script>
+/* NUMIGMA heißt seit November 2026 CIPHRO und liegt unter https://ciphro.eu. Diese Adresse leitet nur noch weiter.
+   Der Browser speichert pro Adresse. Deshalb geht der Spielstand (numfact.v2) im Anker mit: #import=<Base64url von JSON>.
+   Der Anker wird nie an einen Server geschickt. ciphro.eu übernimmt ihn und entfernt ihn sofort aus der Adresse.
+   Ohne Spielstand: #moved (dann sagt ciphro.eu nur, dass NUMIGMA jetzt CIPHRO heißt). Dieser Block ist in index.html,
+   en/index.html und 404.html gleich (die Tests prüfen das). */
+(function () {
+  var NEW = 'https://ciphro.eu/';
+  var base = /^\/numfact\//.test(location.pathname) ? '/numfact/' : '/';
+  var rest = location.pathname.slice(base.length);
+  var hash = '#moved';
+  try {
+    var raw = localStorage.getItem('numfact.v2');
+    var s = raw && JSON.parse(raw);
+    if (s && s.v === 2 && s.days && typeof s.days === 'object') {
+      var b = new TextEncoder().encode(raw), bin = '';
+      for (var i = 0; i < b.length; i += 8192) bin += String.fromCharCode.apply(null, b.subarray(i, i + 8192));
+      hash = '#import=' + btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+  } catch (e) { /* privat, blockiert oder kaputt: ohne Spielstand weiter */ }
+  var url = NEW + (/^en(\/|$)/.test(rest) ? 'en/' : '') + location.search + hash;
+  window.CIPHRO_URL = url;
+  var done = false, go = function () { if (!done) { done = true; location.replace(url); } };
+  // Alte Offline-Hilfe dieser Adresse abmelden (nur die von /numfact/, nicht andere Seiten auf gr3hab.github.io)
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+      setTimeout(go, 500);
+      navigator.serviceWorker.getRegistrations().then(function (rs) {
+        return Promise.all(rs.filter(function (r) { return r.scope === location.origin + base; }).map(function (r) { return r.unregister(); }));
+      }).then(go, go);
+      return;
+    }
+  } catch (e) { /* weiter */ }
+  go();
+})();
+</script>
+<noscript><meta http-equiv="refresh" content="0; url=https://ciphro.eu/"></noscript>
+<style>
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f2f4f7;color:#17202e;font:17px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:16px;box-sizing:border-box}
+main{max-width:420px;text-align:center}
+.b{font:800 2rem/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.03em;margin:0 0 14px}
+.b span{color:#1f3fa6}
+a{display:inline-block;margin-top:10px;padding:12px 20px;border-radius:8px;background:#1f3fa6;color:#fff;font-weight:700;text-decoration:none}
+@media (prefers-color-scheme: dark){body{background:#111715;color:#e6ece8}.b span{color:#a5b9ff}a{background:#a5b9ff;color:#111715}}
+</style>
+</head>
+<body>
+<main>
+<p class="b"><span>CIPH</span>RO</p>
+<p>NUMIGMA heißt jetzt <b>CIPHRO</b>.<br><span lang="en">NUMIGMA is now CIPHRO.</span></p>
+<a id="go" href="https://ciphro.eu/">ciphro.eu</a>
+</main>
+<script>document.getElementById('go').href = window.CIPHRO_URL || 'https://ciphro.eu/';</script>
+</body>
+</html>

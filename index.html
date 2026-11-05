@@ -62,8 +62,10 @@ body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:c
 main{max-width:420px;text-align:center}
 .b{font:800 2rem/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.03em;margin:0 0 14px}
 .b span{color:#1f3fa6}
-a{display:inline-block;margin-top:10px;padding:12px 20px;border-radius:8px;background:#1f3fa6;color:#fff;font-weight:700;text-decoration:none}
-@media (prefers-color-scheme: dark){body{background:#111715;color:#e6ece8}.b span{color:#a5b9ff}a{background:#a5b9ff;color:#111715}}
+#go{display:inline-block;margin-top:10px;padding:12px 20px;border-radius:8px;background:#1f3fa6;color:#fff;font-weight:700;text-decoration:none}
+.r{margin-top:28px;font-size:14px}
+.r a{color:inherit;padding:8px 4px}
+@media (prefers-color-scheme: dark){body{background:#111715;color:#e6ece8}.b span{color:#a5b9ff}#go{background:#a5b9ff;color:#111715}}
 </style>
 </head>
 <body>
@@ -71,6 +73,7 @@ a{display:inline-block;margin-top:10px;padding:12px 20px;border-radius:8px;backg
 <p class="b"><span>CIPH</span>RO</p>
 <p>NUMIGMA heißt jetzt <b>CIPHRO</b> und hat eine neue Adresse. Dein Spielstand kommt mit.</p>
 <a id="go" href="https://ciphro.eu/">Weiter zu ciphro.eu</a>
+<p class="r"><a href="https://ciphro.eu/impressum.html">Impressum</a> · <a href="https://ciphro.eu/datenschutz.html">Datenschutz</a></p>
 </main>
 <script>document.getElementById('go').href = window.CIPHRO_URL || 'https://ciphro.eu/';</script>
 </body>

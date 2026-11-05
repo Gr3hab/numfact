@@ -167,6 +167,9 @@ test('Linkvorschau der alten Adresse zeigt schon CIPHRO mit neuem Bild; Weiterle
   assert.equal(meta(en, 'og:image'), 'https://ciphro.eu/og-en.png?v=3');
   assert.equal(meta(en, 'og:locale'), 'en_GB');
   for (const src of [de, en, nf]) assert.equal(meta(src, 'robots'), 'noindex');
+  // Impressum und Datenschutz auch hier erreichbar (die Seite ist nur kurz zu sehen, aber ohne JavaScript bleibt sie stehen)
+  for (const src of [de, nf]) assert.ok(src.includes('href="https://ciphro.eu/impressum.html"') && src.includes('href="https://ciphro.eu/datenschutz.html"'));
+  assert.ok(en.includes('href="https://ciphro.eu/impressum.html#en"') && en.includes('href="https://ciphro.eu/datenschutz.html#en"'));
   const block = src => src.match(/<script>\n\/\* NUMIGMA heißt[\s\S]*?<\/script>/)[0];
   assert.equal(block(en), block(de));
   assert.equal(block(nf), block(de));
